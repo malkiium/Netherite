@@ -1,0 +1,49 @@
+
+name: Build Netherite macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Check Xcode
+        run: |
+          xcodebuild -version
+          xcodegen --version
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build Netherite
+        run: |
+          xcodebuild \
+            -project Netherite.xcodeproj \
+            -scheme Netherite \
+            -configuration Release \
+            -destination 'platform=macOS,arch=arm64' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package application
+        run: |
+          ditto -c -k --keepParent \
+            build/Build/Products/Release/Netherite.app \
+            Netherite-macOS-arm64.zip
+
+      - name: Upload application
+        uses: actions/upload-artifact@v4
+        with:
+          name: Netherite-macOS-arm64
+          path: Netherite-macOS-arm64.zip
+          retention-days: 7
+
